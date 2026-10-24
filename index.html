@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preventivi Verde</title>
+<style>
+  :root { --bg:#f5f6f3; --card:#fff; --ink:#1f2a1f; --muted:#6b756b; --line:#dfe3dc; --acc:#2f6b3a; --acc2:#e8f1e9; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.4 system-ui, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; gap:8px; align-items:center; padding:10px 16px; background:var(--acc); color:#fff; position:sticky; top:0; z-index:5; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0 auto 0 0; }
+  button { font:inherit; border:1px solid var(--line); background:#fff; border-radius:6px; padding:5px 10px; cursor:pointer; }
+  header button { background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.35); }
+  button:hover { filter:brightness(.95); }
+  button.prim { background:var(--acc); color:#fff; border-color:var(--acc); }
+  main { padding:16px; display:grid; gap:16px; grid-template-columns: 340px 1fr; align-items:start; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .card h2 { font-size:14px; margin:0 0 10px; text-transform:uppercase; letter-spacing:.04em; color:var(--acc); }
+  details.card > summary { cursor:pointer; font-weight:600; color:var(--acc); text-transform:uppercase; font-size:13px; letter-spacing:.04em; }
+  details.card[open] > summary { margin-bottom:10px; }
+  .side { display:grid; gap:12px; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:8px; }
+  input, select, textarea { font:inherit; width:100%; padding:5px 7px; border:1px solid var(--line); border-radius:5px; background:#fff; color:var(--ink); }
+  textarea { resize:vertical; min-height:54px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .search { display:grid; grid-template-columns: 1fr 220px; gap:8px; margin-bottom:8px; }
+  #risultati { max-height:300px; overflow:auto; border:1px solid var(--line); border-radius:6px; }
+  .ris { display:grid; grid-template-columns: 90px 1fr 60px 90px 34px; gap:8px; padding:6px 8px; border-bottom:1px solid var(--line); align-items:center; }
+  .ris:hover { background:var(--acc2); }
+  .ris .d { font-size:13px; }
+  .ris .d small { color:var(--muted); display:block; }
+  .muted { color:var(--muted); font-size:12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:6px 4px; border-bottom:2px solid var(--line); white-space:nowrap; }
+  td { padding:4px; border-bottom:1px solid var(--line); vertical-align:top; }
+  td input { padding:4px 5px; }
+  td textarea { min-height:34px; font-size:13px; min-width:260px; }
+  .scroll { overflow-x:auto; }
+  .n { text-align:right; }
+  .w-s { width:62px; } .w-m { width:86px; }
+  tr.titolo td { background:var(--acc2); }
+  tr.titolo textarea { font-weight:700; }
+  .imp { font-weight:600; white-space:nowrap; padding-top:9px; }
+  .act { white-space:nowrap; }
+  .act button { padding:2px 6px; font-size:12px; }
+  .misure { display:none; gap:4px; grid-template-columns: repeat(4, 1fr); margin-top:4px; }
+  tr.show-mis .misure { display:grid; }
+  .misure input { font-size:12px; }
+  .tot { display:grid; grid-template-columns: 1fr auto; gap:4px 16px; max-width:420px; margin-left:auto; margin-top:14px; }
+  .tot .big { font-size:18px; font-weight:700; color:var(--acc); border-top:2px solid var(--acc); padding-top:6px; }
+  #stampa { display:none; }
+  @media print {
+    header, main { display:none !important; }
+    body { background:#fff; }
+    #stampa { display:block; font-size:11pt; color:#000; }
+    #stampa table { page-break-inside:auto; } #stampa tr { page-break-inside:avoid; }
+    #stampa th, #stampa td { border-bottom:1px solid #bbb; padding:4px; }
+    @page { margin: 14mm; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 Preventivi Verde <span class="muted" style="color:#cfe3d2">— prezzario Assoverde 2025</span></h1>
+  <button id="bNuovo">Nuovo</button>
+  <button id="bApri">Apri…</button>
+  <button id="bSalva">Salva file</button>
+  <button id="bStampa">Stampa / PDF</button>
+  <button id="bWord">Word</button>
+  <input type="file" id="fApri" accept=".json" hidden>
+</header>
+
+<main>
+  <div class="side">
+    <details class="card" open>
+      <summary>Preventivo</summary>
+      <div class="row2">
+        <label>Numero <input data-path="dati.numero"></label>
+        <label>Data <input type="date" data-path="dati.data"></label>
+      </div>
+      <label>Oggetto dei lavori <textarea data-path="dati.oggetto"></textarea></label>
+      <label>Luogo / cantiere <input data-path="dati.luogo"></label>
+      <div class="row2">
+        <label>Validità offerta (giorni) <input type="number" data-path="dati.validita"></label>
+        <label>Tempi di esecuzione <input data-path="dati.tempi"></label>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary>Cliente</summary>
+      <label>Nome / Ragione sociale <input data-path="cliente.nome"></label>
+      <label>Indirizzo <input data-path="cliente.indirizzo"></label>
+      <div class="row2">
+        <label>P.IVA / C.F. <input data-path="cliente.piva"></label>
+        <label>Telefono <input data-path="cliente.tel"></label>
+      </div>
+      <label>Email / PEC <input data-path="cliente.email"></label>
+      <label>Referente <input data-path="cliente.referente"></label>
+    </details>
+
+    <details class="card">
+      <summary>Impresa (resta memorizzata)</summary>
+      <label>Ragione sociale <input data-path="azienda.nome"></label>
+      <label>Indirizzo <input data-path="azienda.indirizzo"></label>
+      <div class="row2">
+        <label>P.IVA <input data-path="azienda.piva"></label>
+        <label>Telefono <input data-path="azienda.tel"></label>
+      </div>
+      <label>Email <input data-path="azienda.email"></label>
+      <label>IBAN <input data-path="azienda.iban"></label>
+    </details>
+
+    <details class="card" open>
+      <summary>Condizioni economiche</summary>
+      <div class="row2">
+        <label>Sconto sui lavori % <input type="number" step="0.01" data-path="condizioni.sconto"></label>
+        <label>IVA % <input type="number" step="1" data-path="condizioni.iva" list="aliquote"></label>
+      </div>
+      <datalist id="aliquote"><option value="22"><option value="10"><option value="4"><option value="0"></datalist>
+      <div class="row2">
+        <label>Oneri sicurezza % <input type="number" step="0.01" data-path="condizioni.sicurezzaPerc"></label>
+        <label>Oneri sicurezza € <input type="number" step="0.01" data-path="condizioni.sicurezzaFissa"></label>
+      </div>
+      <label>Altre spese € (trasporto, cantiere…) <input type="number" step="0.01" data-path="condizioni.altreSpese"></label>
+      <label>Descrizione altre spese <input data-path="condizioni.altreSpeseDesc"></label>
+      <label>Pagamento <input data-path="condizioni.pagamento"></label>
+      <label>Note / esclusioni <textarea data-path="condizioni.note"></textarea></label>
+    </details>
+  </div>
+
+  <div class="side">
+    <section class="card">
+      <h2>Cerca nel prezzario</h2>
+      <div class="search">
+        <input id="q" placeholder="Es. abbattimento 12 m, prato, elettrovalvola, Quercus ilex, codice…" autocomplete="off">
+        <select id="cap"><option value="">Tutti i capitoli</option></select>
+      </div>
+      <div id="risultati"></div>
+      <p class="muted" id="infoRis"></p>
+    </section>
+
+    <section class="card">
+      <h2>Computo / voci del preventivo</h2>
+      <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap">
+        <button id="bVoce">+ Voce libera</button>
+        <button id="bTitolo">+ Titolo sezione</button>
+        <span class="muted" style="align-self:center">Il pulsante 📐 apre le misure (parti × lung × larg × alt): se compilate, calcolano la quantità.</span>
+      </div>
+      <div class="scroll"><table>
+        <thead><tr>
+          <th>Codice</th><th>Descrizione</th><th>U.M.</th><th class="n">Q.tà</th>
+          <th class="n">Prezzo €</th><th class="n">Var. %</th><th class="n">Importo €</th><th></th>
+        </tr></thead>
+        <tbody id="righe"></tbody>
+      </table></div>
+      <div class="tot" id="totali"></div>
+    </section>
+  </div>
+</main>
+
+<div id="stampa"></div>
+
+<script src="data/prezzario.js"></script>
+<script src="calcoli.js"></script>
+<script>
+const { quantita, importoRiga, totali } = Calcoli;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const eur = (x) => (+x || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+function nuovo() {
+  return {
+    azienda: load("azienda") || {},
+    cliente: {},
+    dati: { numero: "", data: new Date().toISOString().slice(0, 10), validita: 30 },
+    condizioni: { iva: 22, sconto: "", pagamento: "" },
+    righe: [],
+  };
+}
+let prev = load("preventivo") || nuovo();
+const salva = () => { store("preventivo", prev); store("azienda", prev.azienda); };
+
+// ---------- Campi anagrafici / condizioni ----------
+function bindCampi() {
+  document.querySelectorAll("[data-path]").forEach((el) => {
+    const [g, k] = el.dataset.path.split(".");
+    el.value = prev[g]?.[k] ?? "";
+  });
+}
+document.addEventListener("input", (e) => {
+  const p = e.target.dataset?.path;
+  if (!p) return;
+  const [g, k] = p.split(".");
+  (prev[g] ||= {})[k] = e.target.value;
+  salva(); renderTotali();
+});
+
+// ---------- Ricerca prezzario ----------
+const DB = (window.PREZZARIO || []).map((v) => ({ ...v, _s: norm(v.codice + " " + v.descrizione + " " + v.capitolo) }));
+[...new Set(DB.map((v) => v.capitolo))].filter(Boolean).sort().forEach((c) => $("#cap").add(new Option(c, c)));
+
+function cerca() {
+  const words = norm($("#q").value).split(/\s+/).filter(Boolean);
+  const cap = $("#cap").value;
+  if (!words.length && !cap) { $("#risultati").innerHTML = ""; $("#infoRis").textContent = `${DB.length} voci disponibili.`; return; }
+  const res = DB.filter((v) => (!cap || v.capitolo === cap) && words.every((w) => v._s.includes(w)));
+  $("#risultati").innerHTML = res.slice(0, 100).map((v, i) => `
+    <div class="ris" title="${esc(v.descrizione)}">
+      <b>${esc(v.codice)}</b>
+      <div class="d">${esc(v.descrizione.length > 220 ? "…" + v.descrizione.slice(-220) : v.descrizione)}<small>${esc(v.capitolo)} · pag. ${v.pagina}</small></div>
+      <span>${esc(v.um)}</span><span class="n">€ ${eur(v.prezzo)}</span>
+      <button class="prim" data-add="${DB.indexOf(v)}" title="Aggiungi al preventivo">+</button>
+    </div>`).join("");
+  $("#infoRis").textContent = res.length > 100 ? `${res.length} risultati, mostrati i primi 100: affina la ricerca.` : `${res.length} risultati.`;
+}
+$("#q").addEventListener("input", cerca);
+$("#cap").addEventListener("change", cerca);
+$("#risultati").addEventListener("click", (e) => {
+  const i = e.target.dataset.add;
+  if (i == null) return;
+  const v = DB[i];
+  aggiungi({ codice: v.codice, descrizione: v.descrizione, um: v.um, prezzo: v.prezzo, qta: 1 });
+});
+
+// ---------- Righe ----------
+const uid = () => Math.random().toString(36).slice(2, 9);
+function aggiungi(r) { prev.righe.push({ id: uid(), tipo: "voce", variazione: "", ...r }); salva(); renderRighe(); }
+$("#bVoce").onclick = () => aggiungi({ codice: "", descrizione: "", um: "cad", prezzo: "", qta: 1 });
+$("#bTitolo").onclick = () => aggiungi({ tipo: "titolo", descrizione: "Nuova sezione" });
+
+function renderRighe() {
+  $("#righe").innerHTML = prev.righe.map((r, i) => r.tipo === "titolo" ? `
+    <tr class="titolo" data-id="${r.id}">
+      <td></td><td colspan="6"><textarea data-f="descrizione" rows="1">${esc(r.descrizione)}</textarea></td>
+      <td class="act">${azioni(i)}</td>
+    </tr>` : `
+    <tr data-id="${r.id}" class="${[r.parti, r.lun, r.lar, r.alt].some((x) => x !== "" && x != null) ? "show-mis" : ""}">
+      <td class="w-m"><input data-f="codice" value="${esc(r.codice)}"></td>
+      <td><textarea data-f="descrizione" rows="2">${esc(r.descrizione)}</textarea>
+        <div class="misure">
+          <input type="number" step="any" data-f="parti" placeholder="parti ug." value="${esc(r.parti)}">
+          <input type="number" step="any" data-f="lun" placeholder="lung." value="${esc(r.lun)}">
+          <input type="number" step="any" data-f="lar" placeholder="larg." value="${esc(r.lar)}">
+          <input type="number" step="any" data-f="alt" placeholder="alt./peso" value="${esc(r.alt)}">
+        </div></td>
+      <td class="w-s"><input data-f="um" value="${esc(r.um)}"></td>
+      <td class="w-m"><input class="n" type="number" step="any" data-f="qta" value="${esc(quantita(r))}"></td>
+      <td class="w-m"><input class="n" type="number" step="0.01" data-f="prezzo" value="${esc(r.prezzo)}"></td>
+      <td class="w-s"><input class="n" type="number" step="any" data-f="variazione" value="${esc(r.variazione)}" title="Es. +80 per 1 solo albero, -10 per sconto riga"></td>
+      <td class="n imp">${eur(importoRiga(r))}</td>
+      <td class="act"><button data-a="mis" title="Misure">📐</button>${azioni(i)}</td>
+    </tr>`).join("") || `<tr><td colspan="8" class="muted" style="padding:16px">Nessuna voce: cerca nel prezzario e premi “+”, oppure aggiungi una voce libera.</td></tr>`;
+  renderTotali();
+}
+const azioni = (i) => `<button data-a="su" title="Sposta su" ${i ? "" : "disabled"}>↑</button><button data-a="giu" title="Sposta giù">↓</button><button data-a="dup" title="Duplica">⧉</button><button data-a="del" title="Elimina">✕</button>`;
+
+$("#righe").addEventListener("input", (e) => {
+  const tr = e.target.closest("tr"), f = e.target.dataset.f;
+  if (!tr || !f) return;
+  const r = prev.righe.find((x) => x.id === tr.dataset.id);
+  r[f] = e.target.value;
+  if (f === "qta") { r.parti = r.lun = r.lar = r.alt = ""; tr.querySelectorAll(".misure input").forEach((x) => (x.value = "")); }
+  if (["parti", "lun", "lar", "alt"].includes(f)) tr.querySelector('[data-f="qta"]').value = quantita(r);
+  const imp = tr.querySelector(".imp");
+  if (imp) imp.textContent = eur(importoRiga(r));
+  salva(); renderTotali();
+});
+$("#righe").addEventListener("click", (e) => {
+  const a = e.target.dataset.a, tr = e.target.closest("tr");
+  if (!a || !tr) return;
+  const i = prev.righe.findIndex((x) => x.id === tr.dataset.id), R = prev.righe;
+  if (a === "mis") { tr.classList.toggle("show-mis"); return; }
+  if (a === "del") { if (!confirm("Eliminare questa voce?")) return; R.splice(i, 1); }
+  if (a === "dup") R.splice(i + 1, 0, { ...R[i], id: uid() });
+  if (a === "su" && i > 0) [R[i - 1], R[i]] = [R[i], R[i - 1]];
+  if (a === "giu" && i < R.length - 1) [R[i + 1], R[i]] = [R[i], R[i + 1]];
+  salva(); renderRighe();
+});
+
+// ---------- Totali ----------
+function renderTotali() {
+  const t = totali(prev), c = prev.condizioni;
+  const riga = (l, v, cls = "") => `<span class="${cls}">${l}</span><span class="n ${cls}">€ ${eur(v)}</span>`;
+  $("#totali").innerHTML = [
+    riga("Totale lavori", t.lavori),
+    t.sconto ? riga(`Sconto ${c.sconto}%`, -t.sconto) + riga("Lavori al netto dello sconto", t.netto) : "",
+    t.sicurezza ? riga("Oneri della sicurezza (non soggetti a sconto)", t.sicurezza) : "",
+    t.altre ? riga(esc(c.altreSpeseDesc || "Altre spese"), t.altre) : "",
+    riga("Imponibile", t.imponibile),
+    riga(`IVA ${c.iva || 0}%`, t.iva),
+    riga("TOTALE PREVENTIVO", t.totale, "big"),
+  ].join("");
+}
+
+// ---------- Stampa ----------
+// Documento del preventivo (senza codici del prezzario): usato sia per la stampa sia per Word,
+// quindi solo tabelle e stili inline, niente flexbox.
+function docHTML() {
+  const { azienda: a, cliente: cl, dati: d, condizioni: c } = prev, t = totali(prev);
+  const dt = d.data ? new Date(d.data).toLocaleDateString("it-IT") : "";
+  const br = (s) => esc(s).replace(/\n/g, "<br>");
+  const tr = (l, v, b) => `<tr><td colspan="5" style="text-align:right;${b ? "font-weight:700" : ""}">${l}</td><td style="text-align:right;white-space:nowrap;${b ? "font-weight:700" : ""}">€ ${eur(v)}</td></tr>`;
+  let n = 0;
+  return `
+    <table style="width:100%;border:none"><tr>
+      <td style="border:none;vertical-align:top"><b style="font-size:14pt">${esc(a.nome)}</b><br>${esc(a.indirizzo)}<br>${a.piva ? "P.IVA " + esc(a.piva) + "<br>" : ""}${esc(a.tel)} ${esc(a.email)}</td>
+      <td style="border:none;vertical-align:top;text-align:right"><b>Spett.le</b><br>${esc(cl.nome)}<br>${esc(cl.indirizzo)}<br>${cl.piva ? "P.IVA/C.F. " + esc(cl.piva) + "<br>" : ""}${cl.referente ? "Alla c.a. " + esc(cl.referente) : ""}</td>
+    </tr></table>
+    <h2 style="margin:20px 0 4px">PREVENTIVO ${d.numero ? "N. " + esc(d.numero) : ""} ${dt ? "del " + dt : ""}</h2>
+    ${d.oggetto ? `<p><b>Oggetto:</b> ${br(d.oggetto)}</p>` : ""}
+    ${d.luogo ? `<p><b>Luogo:</b> ${esc(d.luogo)}</p>` : ""}
+    <table style="width:100%;border-collapse:collapse;margin-top:10px">
+      <thead><tr><th>N.</th><th>Descrizione</th><th>U.M.</th><th style="text-align:right">Q.tà</th><th style="text-align:right">Prezzo</th><th style="text-align:right">Importo</th></tr></thead>
+      <tbody>${prev.righe.map((r) => r.tipo === "titolo"
+        ? `<tr><td colspan="6" style="font-weight:700;padding-top:10px">${esc(r.descrizione)}</td></tr>`
+        : `<tr><td>${++n}</td><td>${br(r.descrizione)}${+r.variazione ? ` <i>(${+r.variazione > 0 ? "+" : ""}${r.variazione}%)</i>` : ""}</td><td>${esc(r.um)}</td>
+            <td style="text-align:right">${quantita(r).toLocaleString("it-IT")}</td><td style="text-align:right">${eur(r.prezzo)}</td><td style="text-align:right">${eur(importoRiga(r))}</td></tr>`).join("")}
+        ${tr("Totale lavori", t.lavori)}
+        ${t.sconto ? tr(`Sconto ${esc(c.sconto)}%`, -t.sconto) + tr("Lavori al netto", t.netto) : ""}
+        ${t.sicurezza ? tr("Oneri della sicurezza", t.sicurezza) : ""}
+        ${t.altre ? tr(esc(c.altreSpeseDesc || "Altre spese"), t.altre) : ""}
+        ${tr("Imponibile", t.imponibile)}${tr(`IVA ${esc(c.iva || 0)}%`, t.iva)}${tr("TOTALE", t.totale, true)}
+      </tbody>
+    </table>
+    <div style="margin-top:16px">
+      ${d.tempi ? `<p><b>Tempi di esecuzione:</b> ${esc(d.tempi)}</p>` : ""}
+      ${c.pagamento ? `<p><b>Pagamento:</b> ${esc(c.pagamento)}${a.iban ? " – IBAN " + esc(a.iban) : ""}</p>` : ""}
+      ${d.validita ? `<p><b>Validità dell'offerta:</b> ${esc(d.validita)} giorni</p>` : ""}
+      ${c.note ? `<p><b>Note:</b><br>${br(c.note)}</p>` : ""}
+      <p style="font-size:9pt;color:#666">Prezzi di riferimento: Prezzario Informativo Assoverde – Edizione 2025.</p>
+      <table style="width:100%;border:none;margin-top:40px"><tr>
+        <td style="border:none">Per l'impresa ____________________</td>
+        <td style="border:none;text-align:right">Per accettazione ____________________</td>
+      </tr></table>
+    </div>`;
+}
+const renderStampa = () => { $("#stampa").innerHTML = docHTML(); };
+window.addEventListener("beforeprint", renderStampa);
+$("#bStampa").onclick = () => { renderStampa(); window.print(); };
+
+// Word: documento HTML salvato come .doc, che Word apre e modifica direttamente (nessuna libreria).
+// ponytail: formato .doc-HTML; se serve un vero .docx, aggiungere una libreria tipo docx.js
+$("#bWord").onclick = () => {
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">
+    <style>body{font-family:Calibri,Arial,sans-serif;font-size:10.5pt} table{border-collapse:collapse}
+    th,td{border-bottom:1px solid #bbb;padding:4px;vertical-align:top} th{text-align:left;background:#e8f1e9}
+    @page{size:21cm 29.7cm;margin:1.5cm}</style></head><body>${docHTML()}</body></html>`;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿", html], { type: "application/msword" }));
+  a.download = `preventivo_${prev.dati.numero || "senza-numero"}_${(prev.cliente.nome || "").replace(/\W+/g, "_")}.doc`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+
+// ---------- File ----------
+$("#bNuovo").onclick = () => { if (confirm("Iniziare un nuovo preventivo? Salva prima il file se ti serve quello attuale.")) { prev = nuovo(); salva(); bindCampi(); renderRighe(); } };
+$("#bSalva").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(prev, null, 2)], { type: "application/json" }));
+  a.download = `preventivo_${prev.dati.numero || "senza-numero"}_${(prev.cliente.nome || "").replace(/\W+/g, "_")}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$("#bApri").onclick = () => $("#fApri").click();
+$("#fApri").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const p = JSON.parse(await f.text());
+    if (!Array.isArray(p.righe)) throw 0;
+    prev = { ...nuovo(), ...p }; salva(); bindCampi(); renderRighe();
+  } catch { alert("File non valido."); }
+  e.target.value = "";
+};
+
+bindCampi(); renderRighe(); cerca();
+</script>
+</body>
+</html>
