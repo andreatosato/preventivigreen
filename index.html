@@ -73,6 +73,8 @@
   dialog h2 { margin-top:0; }
   #stato { margin:0; padding:8px 16px; color:var(--acc); }
   #stato:empty { display:none; }
+  #avvisoStorage { margin:0; padding:12px 16px; background:#fff0d4; color:#6b4000; }
+  #avvisoStorage:empty { display:none; }
   @media (max-width:640px) {
     main { padding:10px; gap:10px; }
     header { padding:8px 10px; }
@@ -100,7 +102,7 @@
     .tot .big { font-size:16px; }
   }
   @media print {
-    header, main, dialog, #stato { display:none !important; }
+    header, main, dialog, #stato, #avvisoStorage { display:none !important; }
     body { background:#fff; }
     #stampa { display:block; font-size:11pt; color:#000; }
     #stampa table { page-break-inside:auto; } #stampa tr { page-break-inside:avoid; }
@@ -126,6 +128,7 @@
   <input type="file" id="fApri" accept=".json" hidden>
 </header>
 <p id="stato" role="status" aria-live="polite"></p>
+<p id="avvisoStorage" role="alert"></p>
 
 <main id="pagina-preventivo">
   <div class="side">
@@ -247,9 +250,9 @@
     <p id="fotoProdotto"></p>
     <p class="muted">Il prezziario non contiene fotografie. Associa una foto di cui possiedi i diritti caricandola dal dispositivo (JPEG, PNG o WebP, massimo 1 MB), oppure tramite un URL HTTPS. Le foto restano in questo browser, separate dai file preventivo. Gli URL esterni caricano l’immagine dal sito indicato.</p>
     <label>Carica foto <input id="fotoFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
-    <label>URL della foto (vuoto per rimuovere) <input id="fotoUrl" type="url" placeholder="https://…" aria-describedby="fotoErrore"></label>
+    <label>URL della foto <input id="fotoUrl" type="url" placeholder="https://…" aria-describedby="fotoErrore"></label>
     <p id="fotoErrore" role="alert"></p>
-    <div class="dialog-azioni"><button type="button" id="fotoAnnulla">Annulla</button><button class="prim" type="submit">Salva foto</button></div>
+    <div class="dialog-azioni"><button type="button" id="fotoAnnulla">Annulla</button><button type="button" id="fotoRimuovi">Rimuovi foto</button><button class="prim" type="submit">Salva foto</button></div>
   </form>
 </dialog>
 
@@ -266,7 +269,7 @@ const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const store = (k, v) => {
   try { localStorage.setItem(k, JSON.stringify(v)); return true; }
-  catch { $("#stato").textContent = "Storage non disponibile o pieno: le modifiche non sono memorizzate. Esporta un file per conservarle."; return false; }
+  catch { $("#avvisoStorage").textContent = "Storage non disponibile o pieno: le modifiche non sono memorizzate. Esporta un file per conservare il preventivo; le foto non sono incluse."; return false; }
 };
 
 function nuovo() {
@@ -377,14 +380,20 @@ ricerche.forEach((s) => {
       const value = foto[prodottoFoto.codice] || prodottoFoto.foto || "";
       $("#fotoUrl").value = value.startsWith("data:") ? "" : value;
       $("#fotoFile").value = "";
+      $("#fotoRimuovi").disabled = !value;
       $("#fotoErrore").textContent = "";
       $("#fotoDialog").showModal();
     }
   });
 });
 $("#fotoAnnulla").onclick = () => $("#fotoDialog").close();
+$("#fotoRimuovi").onclick = () => {
+  delete foto[prodottoFoto.codice];
+  store("fotoProdotti", foto); ricerche.forEach((s) => cerca(s)); $("#fotoDialog").close();
+};
 $("#fotoForm").onsubmit = async (e) => {
   e.preventDefault();
+  const codice = prodottoFoto.codice;
   let value = $("#fotoUrl").value.trim();
   const file = $("#fotoFile").files[0];
   if (file) {
@@ -399,8 +408,7 @@ $("#fotoForm").onsubmit = async (e) => {
     } catch { $("#fotoErrore").textContent = "Impossibile leggere la foto."; return; }
   }
   if (value && !fotoSicura(value)) { $("#fotoErrore").textContent = "Inserisci un URL HTTPS valido."; return; }
-  if (value) foto[prodottoFoto.codice] = fotoSicura(value);
-  else delete foto[prodottoFoto.codice];
+  if (value) foto[codice] = fotoSicura(value);
   store("fotoProdotti", foto); ricerche.forEach((s) => cerca(s)); $("#fotoDialog").close();
 };
 
