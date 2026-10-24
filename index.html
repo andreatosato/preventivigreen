@@ -51,8 +51,56 @@
   .tot { display:grid; grid-template-columns: 1fr auto; gap:4px 16px; max-width:420px; margin-left:auto; margin-top:14px; }
   .tot .big { font-size:18px; font-weight:700; color:var(--acc); border-top:2px solid var(--acc); padding-top:6px; }
   #stampa { display:none; }
+  [hidden] { display:none !important; }
+  button, input, select { min-height:44px; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline:3px solid #93bd76; outline-offset:2px; }
+  main > *, .side, .card, .search > *, .ris > * { min-width:0; }
+  header h1 { font-size:16px; }
+  #menu { position:absolute; top:100%; left:12px; width:min(300px, calc(100vw - 24px)); padding:10px; background:var(--acc); border-radius:0 0 10px 10px; box-shadow:0 6px 15px #0003; display:grid; gap:8px; }
+  #menu button { text-align:left; }
+  main.pagina { grid-template-columns:minmax(0, 1fr); max-width:1200px; margin:auto; }
+  .ris { grid-template-columns:88px minmax(0,1fr) auto; padding:12px; align-items:start; }
+  .ris .d { overflow-wrap:anywhere; white-space:pre-line; line-height:1.6; }
+  .foto { width:88px; height:88px; object-fit:cover; border-radius:8px; }
+  .foto-vuota { display:grid; place-content:center; text-align:center; background:var(--acc2); color:var(--muted); font-size:12px; }
+  .prodotto-info { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:8px; }
+  .prodotto-azioni { display:grid; gap:8px; }
+  #listinoRisultati { border:1px solid var(--line); border-radius:6px; }
+  #risultati { max-height:560px; }
+  .paginazione, .dialog-azioni { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin-top:12px; }
+  dialog { width:min(640px, calc(100% - 24px)); max-height:90dvh; overflow:auto; border:1px solid var(--line); border-radius:12px; padding:20px; color:var(--ink); }
+  dialog::backdrop { background:#0007; }
+  dialog h2 { margin-top:0; }
+  #stato { margin:0; padding:8px 16px; color:var(--acc); }
+  #stato:empty { display:none; }
+  @media (max-width:640px) {
+    main { padding:10px; gap:10px; }
+    header { padding:8px 10px; }
+    header h1 span { display:none; }
+    header > button { flex:1; }
+    header > #bMenu { flex:0 0 44px; }
+    .search { grid-template-columns:minmax(0,1fr); }
+    input, select, textarea { font-size:16px; }
+    .row2 { grid-template-columns:minmax(0,1fr); }
+    .ris { grid-template-columns:64px minmax(0,1fr); gap:10px; }
+    .foto { width:64px; height:64px; }
+    .prodotto-azioni { grid-column:1 / -1; display:flex; }
+    .prodotto-azioni button { flex:1; }
+    #risultati { max-height:65dvh; }
+    #computo, #computo tbody { display:block; }
+    #computo thead { display:none; }
+    #computo tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; border-bottom:2px solid var(--line); padding:12px 0; }
+    #computo td { display:block; width:auto; border:0; padding:0; min-width:0; }
+    #computo td::before { content:attr(data-label); display:block; color:var(--muted); font-size:12px; margin-bottom:4px; }
+    #computo td:nth-child(2), #computo td:last-child, #computo tr.titolo td, #computo td[colspan="8"] { grid-column:1 / -1; }
+    #computo textarea { min-width:0; min-height:100px; }
+    #computo .act { display:flex; flex-wrap:wrap; gap:6px; }
+    #computo .act button { flex:1; min-width:44px; font-size:16px; }
+    .tot { gap:8px; }
+    .tot .big { font-size:16px; }
+  }
   @media print {
-    header, main { display:none !important; }
+    header, main, dialog, #stato { display:none !important; }
     body { background:#fff; }
     #stampa { display:block; font-size:11pt; color:#000; }
     #stampa table { page-break-inside:auto; } #stampa tr { page-break-inside:avoid; }
@@ -63,55 +111,28 @@
 </head>
 <body>
 <header>
+  <button id="bMenu" aria-label="Apri menu" aria-expanded="false" aria-controls="menu">☰</button>
   <h1>🌿 Preventivi Verde <span class="muted" style="color:#cfe3d2">— prezzario Assoverde 2025</span></h1>
-  <button id="bNuovo">Nuovo</button>
-  <button id="bApri">Apri…</button>
   <button id="bSalva">Salva file</button>
   <button id="bStampa">Stampa / PDF</button>
   <button id="bWord">Word</button>
+  <nav id="menu" aria-label="Menu principale" hidden>
+    <button data-page="preventivo" aria-current="page">Preventivo</button>
+    <button data-page="prezzario">Consulta prezziario</button>
+    <button data-page="azienda">Impostazioni azienda</button>
+    <button id="bNuovo">Nuovo preventivo</button>
+    <button id="bApri">Apri file…</button>
+  </nav>
   <input type="file" id="fApri" accept=".json" hidden>
 </header>
+<p id="stato" role="status" aria-live="polite"></p>
 
-<main>
+<main id="pagina-preventivo">
   <div class="side">
-    <details class="card" open>
-      <summary>Preventivo</summary>
-      <div class="row2">
-        <label>Numero <input data-path="dati.numero"></label>
-        <label>Data <input type="date" data-path="dati.data"></label>
-      </div>
-      <label>Oggetto dei lavori <textarea data-path="dati.oggetto"></textarea></label>
-      <label>Luogo / cantiere <input data-path="dati.luogo"></label>
-      <div class="row2">
-        <label>Validità offerta (giorni) <input type="number" data-path="dati.validita"></label>
-        <label>Tempi di esecuzione <input data-path="dati.tempi"></label>
-      </div>
-    </details>
-
-    <details class="card" open>
-      <summary>Cliente</summary>
-      <label>Nome / Ragione sociale <input data-path="cliente.nome"></label>
-      <label>Indirizzo <input data-path="cliente.indirizzo"></label>
-      <div class="row2">
-        <label>P.IVA / C.F. <input data-path="cliente.piva"></label>
-        <label>Telefono <input data-path="cliente.tel"></label>
-      </div>
-      <label>Email / PEC <input data-path="cliente.email"></label>
-      <label>Referente <input data-path="cliente.referente"></label>
-    </details>
-
-    <details class="card">
-      <summary>Impresa (resta memorizzata)</summary>
-      <label>Ragione sociale <input data-path="azienda.nome"></label>
-      <label>Indirizzo <input data-path="azienda.indirizzo"></label>
-      <div class="row2">
-        <label>P.IVA <input data-path="azienda.piva"></label>
-        <label>Telefono <input data-path="azienda.tel"></label>
-      </div>
-      <label>Email <input data-path="azienda.email"></label>
-      <label>IBAN <input data-path="azienda.iban"></label>
-    </details>
-
+    <section class="card">
+      <h2>Componi il preventivo</h2>
+      <p>Aggiungi le voci e imposta le condizioni economiche. I dati del cliente e del documento verranno richiesti solo all’esportazione.</p>
+    </section>
     <details class="card" open>
       <summary>Condizioni economiche</summary>
       <div class="row2">
@@ -125,22 +146,19 @@
       </div>
       <label>Altre spese € (trasporto, cantiere…) <input type="number" step="0.01" data-path="condizioni.altreSpese"></label>
       <label>Descrizione altre spese <input data-path="condizioni.altreSpeseDesc"></label>
-      <label>Pagamento <input data-path="condizioni.pagamento"></label>
-      <label>Note / esclusioni <textarea data-path="condizioni.note"></textarea></label>
     </details>
   </div>
-
   <div class="side">
     <section class="card">
       <h2>Cerca nel prezzario</h2>
       <div class="search">
-        <input id="q" placeholder="Es. abbattimento 12 m, prato, elettrovalvola, Quercus ilex, codice…" autocomplete="off">
-        <select id="cap"><option value="">Tutti i capitoli</option></select>
+        <input id="q" aria-label="Cerca prodotti" placeholder="Descrizione o codice…" autocomplete="off">
+        <select id="cap" aria-label="Capitolo"><option value="">Tutti i capitoli</option></select>
       </div>
       <div id="risultati"></div>
-      <p class="muted" id="infoRis"></p>
+      <p class="muted" id="infoRis" aria-live="polite"></p>
+      <div class="paginazione"><button id="cercaPrima">Precedenti</button><button id="cercaDopo">Successivi</button></div>
     </section>
-
     <section class="card">
       <h2>Computo / voci del preventivo</h2>
       <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap">
@@ -148,10 +166,10 @@
         <button id="bTitolo">+ Titolo sezione</button>
         <span class="muted" style="align-self:center">Il pulsante 📐 apre le misure (parti × lung × larg × alt): se compilate, calcolano la quantità.</span>
       </div>
-      <div class="scroll"><table>
+      <div class="scroll"><table id="computo">
         <thead><tr>
           <th>Codice</th><th>Descrizione</th><th>U.M.</th><th class="n">Q.tà</th>
-          <th class="n">Prezzo €</th><th class="n">Var. %</th><th class="n">Importo €</th><th></th>
+          <th class="n">Prezzo €</th><th class="n">Var. %</th><th class="n">Importo €</th><th>Azioni</th>
         </tr></thead>
         <tbody id="righe"></tbody>
       </table></div>
@@ -159,6 +177,81 @@
     </section>
   </div>
 </main>
+
+<main id="pagina-prezzario" class="pagina" hidden>
+  <section class="card">
+    <h2 tabindex="-1">Consulta prezziario Assoverde 2025</h2>
+    <div class="search">
+      <input id="listinoQ" aria-label="Cerca nel prezziario" placeholder="Descrizione o codice…" autocomplete="off">
+      <select id="listinoCap" aria-label="Capitolo del prezziario"><option value="">Tutti i capitoli</option></select>
+    </div>
+    <p id="listinoInfo" class="muted" aria-live="polite"></p>
+    <div id="listinoRisultati"></div>
+    <div class="paginazione"><button id="listinoPrima">Precedenti</button><button id="listinoDopo">Successivi</button></div>
+  </section>
+</main>
+
+<main id="pagina-azienda" class="pagina" hidden>
+  <section class="card">
+    <h2 tabindex="-1">Impostazioni azienda</h2>
+    <p class="muted">Salvataggio automatico nello storage locale di questo browser. Questi dati vengono mantenuti anche creando o aprendo un preventivo.</p>
+    <label>Ragione sociale <input data-path="azienda.nome"></label>
+    <label>Indirizzo <input data-path="azienda.indirizzo"></label>
+    <div class="row2">
+      <label>P.IVA <input data-path="azienda.piva"></label>
+      <label>Telefono <input type="tel" data-path="azienda.tel"></label>
+    </div>
+    <label>Email <input type="email" data-path="azienda.email"></label>
+    <label>IBAN <input data-path="azienda.iban"></label>
+  </section>
+</main>
+
+<dialog id="exportDialog" aria-labelledby="exportTitolo">
+  <form id="exportForm">
+    <h2 id="exportTitolo">Dati per l’esportazione</h2>
+    <p class="muted">Completa i dati da includere nel documento. Puoi lasciare vuoti i campi non necessari.</p>
+    <fieldset>
+      <legend>Preventivo</legend>
+      <div class="row2">
+        <label>Numero <input data-path="dati.numero"></label>
+        <label>Data <input type="date" data-path="dati.data"></label>
+      </div>
+      <label>Oggetto dei lavori <textarea data-path="dati.oggetto"></textarea></label>
+      <label>Luogo / cantiere <input data-path="dati.luogo"></label>
+      <div class="row2">
+        <label>Validità offerta (giorni) <input type="number" data-path="dati.validita"></label>
+        <label>Tempi di esecuzione <input data-path="dati.tempi"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Cliente</legend>
+      <label>Nome / Ragione sociale <input data-path="cliente.nome"></label>
+      <label>Indirizzo <input data-path="cliente.indirizzo"></label>
+      <div class="row2">
+        <label>P.IVA / C.F. <input data-path="cliente.piva"></label>
+        <label>Telefono <input data-path="cliente.tel"></label>
+      </div>
+      <label>Email / PEC <input data-path="cliente.email"></label>
+      <label>Referente <input data-path="cliente.referente"></label>
+    </fieldset>
+      <label>Pagamento <input data-path="condizioni.pagamento"></label>
+      <label>Note / esclusioni <textarea data-path="condizioni.note"></textarea></label>
+    <div class="dialog-azioni"><button type="button" id="exportAnnulla">Annulla</button><button type="submit" class="prim" id="exportConferma">Esporta</button></div>
+  </form>
+</dialog>
+
+<dialog id="fotoDialog" aria-labelledby="fotoTitolo">
+  <form id="fotoForm">
+    <h2 id="fotoTitolo">Foto prodotto</h2>
+    <p id="fotoProdotto"></p>
+    <p class="muted">Il prezziario non contiene fotografie. Associa una foto di cui possiedi i diritti caricandola dal dispositivo (JPEG, PNG o WebP, massimo 1 MB), oppure tramite un URL HTTPS. Le foto restano in questo browser, separate dai file preventivo. Gli URL esterni caricano l’immagine dal sito indicato.</p>
+    <label>Carica foto <input id="fotoFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
+    <label>URL della foto (vuoto per rimuovere) <input id="fotoUrl" type="url" placeholder="https://…" aria-describedby="fotoErrore"></label>
+    <p id="fotoErrore" role="alert"></p>
+    <div class="dialog-azioni"><button type="button" id="fotoAnnulla">Annulla</button><button class="prim" type="submit">Salva foto</button></div>
+  </form>
+</dialog>
 
 <div id="stampa"></div>
 
@@ -171,7 +264,10 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const eur = (x) => (+x || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
-const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const store = (k, v) => {
+  try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+  catch { $("#stato").textContent = "Storage non disponibile o pieno: le modifiche non sono memorizzate. Esporta un file per conservarle."; return false; }
+};
 
 function nuovo() {
   return {
@@ -183,7 +279,28 @@ function nuovo() {
   };
 }
 let prev = load("preventivo") || nuovo();
+prev.azienda = load("azienda") || prev.azienda || {};
 const salva = () => { store("preventivo", prev); store("azienda", prev.azienda); };
+
+// ---------- Navigazione ----------
+function chiudiMenu() { $("#menu").hidden = true; $("#bMenu").setAttribute("aria-expanded", "false"); }
+function pagina(nome) {
+  document.querySelectorAll("main[id^='pagina-']").forEach((el) => { el.hidden = el.id !== `pagina-${nome}`; });
+  document.querySelectorAll("[data-page]").forEach((el) => {
+    if (el.dataset.page === nome) el.setAttribute("aria-current", "page");
+    else el.removeAttribute("aria-current");
+  });
+  chiudiMenu();
+  const titolo = $(`#pagina-${nome} h2`);
+  titolo.setAttribute("tabindex", "-1"); titolo.focus();
+}
+$("#bMenu").onclick = () => {
+  $("#menu").hidden = !$("#menu").hidden;
+  $("#bMenu").setAttribute("aria-expanded", String(!$("#menu").hidden));
+};
+$("#menu").addEventListener("click", (e) => { if (e.target.dataset.page) pagina(e.target.dataset.page); });
+document.addEventListener("click", (e) => { if (!e.target.closest("#menu, #bMenu")) chiudiMenu(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#menu").hidden) { chiudiMenu(); $("#bMenu").focus(); } });
 
 // ---------- Campi anagrafici / condizioni ----------
 function bindCampi() {
@@ -194,38 +311,98 @@ function bindCampi() {
 }
 document.addEventListener("input", (e) => {
   const p = e.target.dataset?.path;
-  if (!p) return;
+  if (!p || e.target.closest("#exportDialog")) return;
   const [g, k] = p.split(".");
   (prev[g] ||= {})[k] = e.target.value;
   salva(); renderTotali();
 });
 
 // ---------- Ricerca prezzario ----------
-const DB = (window.PREZZARIO || []).map((v) => ({ ...v, _s: norm(v.codice + " " + v.descrizione + " " + v.capitolo) }));
-[...new Set(DB.map((v) => v.capitolo))].filter(Boolean).sort().forEach((c) => $("#cap").add(new Option(c, c)));
-
-function cerca() {
-  const words = norm($("#q").value).split(/\s+/).filter(Boolean);
-  const cap = $("#cap").value;
-  if (!words.length && !cap) { $("#risultati").innerHTML = ""; $("#infoRis").textContent = `${DB.length} voci disponibili.`; return; }
-  const res = DB.filter((v) => (!cap || v.capitolo === cap) && words.every((w) => v._s.includes(w)));
-  $("#risultati").innerHTML = res.slice(0, 100).map((v, i) => `
-    <div class="ris" title="${esc(v.descrizione)}">
-      <b>${esc(v.codice)}</b>
-      <div class="d">${esc(v.descrizione.length > 220 ? "…" + v.descrizione.slice(-220) : v.descrizione)}<small>${esc(v.capitolo)} · pag. ${v.pagina}</small></div>
-      <span>${esc(v.um)}</span><span class="n">€ ${eur(v.prezzo)}</span>
-      <button class="prim" data-add="${DB.indexOf(v)}" title="Aggiungi al preventivo">+</button>
-    </div>`).join("");
-  $("#infoRis").textContent = res.length > 100 ? `${res.length} risultati, mostrati i primi 100: affina la ricerca.` : `${res.length} risultati.`;
-}
-$("#q").addEventListener("input", cerca);
-$("#cap").addEventListener("change", cerca);
-$("#risultati").addEventListener("click", (e) => {
-  const i = e.target.dataset.add;
-  if (i == null) return;
-  const v = DB[i];
-  aggiungi({ codice: v.codice, descrizione: v.descrizione, um: v.um, prezzo: v.prezzo, qta: 1 });
+const DB = (window.PREZZARIO || []).map((v, i) => ({ ...v, _i: i, _s: norm(v.codice + " " + v.descrizione + " " + v.capitolo) }));
+[...new Set(DB.map((v) => v.capitolo))].filter(Boolean).sort().forEach((c) => {
+  $("#cap").add(new Option(c, c)); $("#listinoCap").add(new Option(c, c));
 });
+const foto = load("fotoProdotti") || {};
+const ricerche = [
+  { q: "#q", cap: "#cap", risultati: "#risultati", info: "#infoRis", prima: "#cercaPrima", dopo: "#cercaDopo", pagina: 0 },
+  { q: "#listinoQ", cap: "#listinoCap", risultati: "#listinoRisultati", info: "#listinoInfo", prima: "#listinoPrima", dopo: "#listinoDopo", pagina: 0 },
+];
+function fotoSicura(value) {
+  if (!value) return "";
+  if (/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return value;
+  try { const u = new URL(value, location.href); return u.protocol === "https:" || (u.origin === location.origin && u.protocol === "http:") ? u.href : ""; }
+  catch { return ""; }
+}
+function scheda(v) {
+  const src = fotoSicura(foto[v.codice] || v.foto || "");
+  return `<article class="ris">
+    <div>${src ? `<img class="foto" src="${esc(src)}" alt="Foto della voce ${esc(v.codice)}" loading="lazy" referrerpolicy="no-referrer">` : ""}
+      <div class="foto foto-vuota" ${src ? "hidden" : ""}>Foto non disponibile</div></div>
+    <div class="d"><b>${esc(v.codice)}</b><div>${esc(v.descrizione)}</div><small>${esc(v.capitolo)} · pag. ${esc(v.pagina)}</small>
+      <div class="prodotto-info"><span>U.M.: ${esc(v.um)}</span><strong>€ ${eur(v.prezzo)}</strong></div></div>
+    <div class="prodotto-azioni"><button class="prim" data-add="${v._i}" aria-label="Aggiungi la voce ${esc(v.codice)}">+ Aggiungi</button>
+      <button data-foto="${v._i}" aria-label="Configura foto della voce ${esc(v.codice)}">Foto…</button></div>
+  </article>`;
+}
+function cerca(s = ricerche[0]) {
+  const words = norm($(s.q).value).split(/\s+/).filter(Boolean);
+  const cap = $(s.cap).value;
+  const res = DB.filter((v) => (!cap || v.capitolo === cap) && words.every((w) => v._s.includes(w)));
+  s.pagina = Math.min(s.pagina, Math.max(0, Math.ceil(res.length / 20) - 1));
+  const start = s.pagina * 20;
+  $(s.risultati).innerHTML = res.slice(start, start + 20).map(scheda).join("") || '<p class="muted">Nessuna voce trovata.</p>';
+  $(s.risultati).querySelectorAll("img").forEach((img) => {
+    img.onerror = () => { img.hidden = true; img.nextElementSibling.hidden = false; };
+  });
+  $(s.info).textContent = `${res.length} voci · ${res.length ? start + 1 : 0}–${Math.min(start + 20, res.length)} visualizzate.`;
+  $(s.prima).disabled = s.pagina === 0;
+  $(s.dopo).disabled = start + 20 >= res.length;
+  $(s.risultati).scrollTop = 0;
+}
+let prodottoFoto;
+ricerche.forEach((s) => {
+  $(s.q).addEventListener("input", () => { s.pagina = 0; cerca(s); });
+  $(s.cap).addEventListener("change", () => { s.pagina = 0; cerca(s); });
+  $(s.prima).onclick = () => { s.pagina--; cerca(s); };
+  $(s.dopo).onclick = () => { s.pagina++; cerca(s); };
+  $(s.risultati).addEventListener("click", (e) => {
+    if (e.target.dataset.add != null) {
+      const v = DB[e.target.dataset.add];
+      aggiungi({ codice: v.codice, descrizione: v.descrizione, um: v.um, prezzo: v.prezzo, qta: 1 });
+      $("#stato").textContent = `Voce ${v.codice} aggiunta al preventivo.`;
+    }
+    if (e.target.dataset.foto != null) {
+      prodottoFoto = DB[e.target.dataset.foto];
+      $("#fotoProdotto").textContent = `${prodottoFoto.codice} — ${prodottoFoto.descrizione}`;
+      const value = foto[prodottoFoto.codice] || prodottoFoto.foto || "";
+      $("#fotoUrl").value = value.startsWith("data:") ? "" : value;
+      $("#fotoFile").value = "";
+      $("#fotoErrore").textContent = "";
+      $("#fotoDialog").showModal();
+    }
+  });
+});
+$("#fotoAnnulla").onclick = () => $("#fotoDialog").close();
+$("#fotoForm").onsubmit = async (e) => {
+  e.preventDefault();
+  let value = $("#fotoUrl").value.trim();
+  const file = $("#fotoFile").files[0];
+  if (file) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 1024 * 1024) {
+      $("#fotoErrore").textContent = "Scegli una foto JPEG, PNG o WebP di massimo 1 MB."; return;
+    }
+    try {
+      value = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file);
+      });
+    } catch { $("#fotoErrore").textContent = "Impossibile leggere la foto."; return; }
+  }
+  if (value && !fotoSicura(value)) { $("#fotoErrore").textContent = "Inserisci un URL HTTPS valido."; return; }
+  if (value) foto[prodottoFoto.codice] = fotoSicura(value);
+  else delete foto[prodottoFoto.codice];
+  store("fotoProdotti", foto); ricerche.forEach((s) => cerca(s)); $("#fotoDialog").close();
+};
 
 // ---------- Righe ----------
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -235,11 +412,11 @@ $("#bTitolo").onclick = () => aggiungi({ tipo: "titolo", descrizione: "Nuova sez
 
 function renderRighe() {
   $("#righe").innerHTML = prev.righe.map((r, i) => r.tipo === "titolo" ? `
-    <tr class="titolo" data-id="${r.id}">
+    <tr class="titolo" data-id="${esc(r.id)}">
       <td></td><td colspan="6"><textarea data-f="descrizione" rows="1">${esc(r.descrizione)}</textarea></td>
       <td class="act">${azioni(i)}</td>
     </tr>` : `
-    <tr data-id="${r.id}" class="${[r.parti, r.lun, r.lar, r.alt].some((x) => x !== "" && x != null) ? "show-mis" : ""}">
+    <tr data-id="${esc(r.id)}" class="${[r.parti, r.lun, r.lar, r.alt].some((x) => x !== "" && x != null) ? "show-mis" : ""}">
       <td class="w-m"><input data-f="codice" value="${esc(r.codice)}"></td>
       <td><textarea data-f="descrizione" rows="2">${esc(r.descrizione)}</textarea>
         <div class="misure">
@@ -256,6 +433,14 @@ function renderRighe() {
       <td class="act"><button data-a="mis" title="Misure">📐</button>${azioni(i)}</td>
     </tr>`).join("") || `<tr><td colspan="8" class="muted" style="padding:16px">Nessuna voce: cerca nel prezzario e premi “+”, oppure aggiungi una voce libera.</td></tr>`;
   renderTotali();
+  const labels = ["Codice", "Descrizione", "U.M.", "Quantità", "Prezzo €", "Variazione %", "Importo €", "Azioni"];
+  $("#righe").querySelectorAll("tr:not(.titolo)").forEach((tr) => {
+    if (tr.cells.length !== 8) return;
+    [...tr.cells].forEach((td, i) => {
+      td.dataset.label = labels[i];
+      td.querySelectorAll("input, textarea").forEach((el) => el.setAttribute("aria-label", el.placeholder || labels[i]));
+    });
+  });
 }
 const azioni = (i) => `<button data-a="su" title="Sposta su" ${i ? "" : "disabled"}>↑</button><button data-a="giu" title="Sposta giù">↓</button><button data-a="dup" title="Duplica">⧉</button><button data-a="del" title="Elimina">✕</button>`;
 
@@ -288,11 +473,11 @@ function renderTotali() {
   const riga = (l, v, cls = "") => `<span class="${cls}">${l}</span><span class="n ${cls}">€ ${eur(v)}</span>`;
   $("#totali").innerHTML = [
     riga("Totale lavori", t.lavori),
-    t.sconto ? riga(`Sconto ${c.sconto}%`, -t.sconto) + riga("Lavori al netto dello sconto", t.netto) : "",
+    t.sconto ? riga(`Sconto ${esc(c.sconto)}%`, -t.sconto) + riga("Lavori al netto dello sconto", t.netto) : "",
     t.sicurezza ? riga("Oneri della sicurezza (non soggetti a sconto)", t.sicurezza) : "",
     t.altre ? riga(esc(c.altreSpeseDesc || "Altre spese"), t.altre) : "",
     riga("Imponibile", t.imponibile),
-    riga(`IVA ${c.iva || 0}%`, t.iva),
+    riga(`IVA ${esc(c.iva || 0)}%`, t.iva),
     riga("TOTALE PREVENTIVO", t.totale, "big"),
   ].join("");
 }
@@ -318,7 +503,7 @@ function docHTML() {
       <thead><tr><th>N.</th><th>Descrizione</th><th>U.M.</th><th style="text-align:right">Q.tà</th><th style="text-align:right">Prezzo</th><th style="text-align:right">Importo</th></tr></thead>
       <tbody>${prev.righe.map((r) => r.tipo === "titolo"
         ? `<tr><td colspan="6" style="font-weight:700;padding-top:10px">${esc(r.descrizione)}</td></tr>`
-        : `<tr><td>${++n}</td><td>${br(r.descrizione)}${+r.variazione ? ` <i>(${+r.variazione > 0 ? "+" : ""}${r.variazione}%)</i>` : ""}</td><td>${esc(r.um)}</td>
+        : `<tr><td>${++n}</td><td>${br(r.descrizione)}${+r.variazione ? ` <i>(${+r.variazione > 0 ? "+" : ""}${esc(r.variazione)}%)</i>` : ""}</td><td>${esc(r.um)}</td>
             <td style="text-align:right">${quantita(r).toLocaleString("it-IT")}</td><td style="text-align:right">${eur(r.prezzo)}</td><td style="text-align:right">${eur(importoRiga(r))}</td></tr>`).join("")}
         ${tr("Totale lavori", t.lavori)}
         ${t.sconto ? tr(`Sconto ${esc(c.sconto)}%`, -t.sconto) + tr("Lavori al netto", t.netto) : ""}
@@ -341,11 +526,34 @@ function docHTML() {
 }
 const renderStampa = () => { $("#stampa").innerHTML = docHTML(); };
 window.addEventListener("beforeprint", renderStampa);
-$("#bStampa").onclick = () => { renderStampa(); window.print(); };
+function stampa() { renderStampa(); window.print(); }
+
+let formatoExport;
+function apriExport(formato) {
+  formatoExport = formato;
+  bindCampi();
+  $("#exportConferma").textContent = formato === "pdf" ? "Stampa / PDF" : formato === "word" ? "Esporta Word" : "Salva file JSON";
+  $("#exportDialog").showModal();
+}
+$("#bStampa").onclick = () => apriExport("pdf");
+$("#bWord").onclick = () => apriExport("word");
+$("#bSalva").onclick = () => apriExport("json");
+$("#exportAnnulla").onclick = () => $("#exportDialog").close();
+$("#exportForm").onsubmit = (e) => {
+  e.preventDefault();
+  $("#exportDialog").querySelectorAll("[data-path]").forEach((el) => {
+    const [g, k] = el.dataset.path.split(".");
+    (prev[g] ||= {})[k] = el.value;
+  });
+  salva(); $("#exportDialog").close();
+  if (formatoExport === "pdf") stampa();
+  else if (formatoExport === "word") esportaWord();
+  else salvaFile();
+};
 
 // Word: documento HTML salvato come .doc, che Word apre e modifica direttamente (nessuna libreria).
 // ponytail: formato .doc-HTML; se serve un vero .docx, aggiungere una libreria tipo docx.js
-$("#bWord").onclick = () => {
+function esportaWord() {
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">
     <style>body{font-family:Calibri,Arial,sans-serif;font-size:10.5pt} table{border-collapse:collapse}
     th,td{border-bottom:1px solid #bbb;padding:4px;vertical-align:top} th{text-align:left;background:#e8f1e9}
@@ -354,29 +562,37 @@ $("#bWord").onclick = () => {
   a.href = URL.createObjectURL(new Blob(["﻿", html], { type: "application/msword" }));
   a.download = `preventivo_${prev.dati.numero || "senza-numero"}_${(prev.cliente.nome || "").replace(/\W+/g, "_")}.doc`;
   a.click(); URL.revokeObjectURL(a.href);
-};
+}
 
 // ---------- File ----------
-$("#bNuovo").onclick = () => { if (confirm("Iniziare un nuovo preventivo? Salva prima il file se ti serve quello attuale.")) { prev = nuovo(); salva(); bindCampi(); renderRighe(); } };
-$("#bSalva").onclick = () => {
+$("#bNuovo").onclick = () => { if (confirm("Iniziare un nuovo preventivo? Salva prima il file se ti serve quello attuale.")) { const azienda = prev.azienda; prev = nuovo(); prev.azienda = azienda; salva(); bindCampi(); renderRighe(); pagina("preventivo"); } };
+function salvaFile() {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(prev, null, 2)], { type: "application/json" }));
   a.download = `preventivo_${prev.dati.numero || "senza-numero"}_${(prev.cliente.nome || "").replace(/\W+/g, "_")}.json`;
   a.click(); URL.revokeObjectURL(a.href);
-};
-$("#bApri").onclick = () => $("#fApri").click();
+}
+$("#bApri").onclick = () => { chiudiMenu(); $("#fApri").click(); };
 $("#fApri").onchange = async (e) => {
   const f = e.target.files[0];
   if (!f) return;
   try {
     const p = JSON.parse(await f.text());
-    if (!Array.isArray(p.righe)) throw 0;
-    prev = { ...nuovo(), ...p }; salva(); bindCampi(); renderRighe();
+    if (!p || !Array.isArray(p.righe) || p.righe.some((r) => !r || typeof r !== "object" || Array.isArray(r))) throw 0;
+    const base = nuovo();
+    prev = {
+      azienda: prev.azienda,
+      cliente: { ...base.cliente, ...p.cliente },
+      dati: { ...base.dati, ...p.dati },
+      condizioni: { ...base.condizioni, ...p.condizioni },
+      righe: p.righe.map((r) => ({ ...r, id: uid() })),
+    };
+    salva(); bindCampi(); renderRighe(); pagina("preventivo");
   } catch { alert("File non valido."); }
   e.target.value = "";
 };
 
-bindCampi(); renderRighe(); cerca();
+bindCampi(); renderRighe(); ricerche.forEach((s) => cerca(s));
 </script>
 </body>
 </html>
