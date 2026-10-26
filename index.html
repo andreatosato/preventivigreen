@@ -346,6 +346,7 @@ function scheda(v) {
   return `<article class="ris">
     <div>${src ? `<img class="foto" src="${esc(src)}" alt="Foto illustrativa: ${esc(v.capitolo || "servizio di giardinaggio")}" loading="lazy" referrerpolicy="no-referrer">` : ""}
       <div class="foto foto-vuota" ${src ? "hidden" : ""}>Foto non disponibile</div></div>
+      <div class="d"><div>${esc(v.descrizione)}</div><small>${esc(v.capitolo)}</small>
       <div class="prodotto-info"><span>U.M.: ${esc(v.um)}</span><strong>€ ${eur(v.prezzo)}</strong></div></div>
     <div class="prodotto-azioni"><button class="prim" data-add="${v._i}" aria-label="Aggiungi: ${esc(v.descrizione)}">+ Aggiungi</button>
       <button data-foto="${v._i}" aria-label="Configura foto: ${esc(v.descrizione)}">Foto…</button></div>
