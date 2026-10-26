@@ -94,7 +94,7 @@
     #computo tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; border-bottom:2px solid var(--line); padding:12px 0; }
     #computo td { display:block; width:auto; border:0; padding:0; min-width:0; }
     #computo td::before { content:attr(data-label); display:block; color:var(--muted); font-size:12px; margin-bottom:4px; }
-    #computo td:nth-child(2), #computo td:last-child, #computo tr.titolo td, #computo td[colspan="8"] { grid-column:1 / -1; }
+    #computo td:first-child, #computo td:last-child, #computo tr.titolo td, #computo td[colspan="7"] { grid-column:1 / -1; }
     #computo textarea { min-width:0; min-height:100px; }
     #computo .act { display:flex; flex-wrap:wrap; gap:6px; }
     #computo .act button { flex:1; min-width:44px; font-size:16px; }
@@ -155,7 +155,7 @@
     <section class="card">
       <h2>Cerca nel prezzario</h2>
       <div class="search">
-        <input id="q" aria-label="Cerca prodotti" placeholder="Descrizione o codice…" autocomplete="off">
+        <input id="q" aria-label="Cerca prodotti" placeholder="Descrizione…" autocomplete="off">
         <select id="cap" aria-label="Capitolo"><option value="">Tutti i capitoli</option></select>
       </div>
       <div id="risultati"></div>
@@ -171,7 +171,7 @@
       </div>
       <div class="scroll"><table id="computo">
         <thead><tr>
-          <th>Codice</th><th>Descrizione</th><th>U.M.</th><th class="n">Q.tà</th>
+          <th>Descrizione</th><th>U.M.</th><th class="n">Q.tà</th>
           <th class="n">Prezzo €</th><th class="n">Var. %</th><th class="n">Importo €</th><th>Azioni</th>
         </tr></thead>
         <tbody id="righe"></tbody>
@@ -185,7 +185,7 @@
   <section class="card">
     <h2 tabindex="-1">Consulta prezziario Assoverde 2025</h2>
     <div class="search">
-      <input id="listinoQ" aria-label="Cerca nel prezziario" placeholder="Descrizione o codice…" autocomplete="off">
+      <input id="listinoQ" aria-label="Cerca nel prezziario" placeholder="Descrizione…" autocomplete="off">
       <select id="listinoCap" aria-label="Capitolo del prezziario"><option value="">Tutti i capitoli</option></select>
     </div>
     <p id="listinoInfo" class="muted" aria-live="polite"></p>
@@ -266,6 +266,10 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const eur = (x) => (+x || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const pulisciDescrizione = (s) => String(s ?? "")
+  .replace(/\s*vedi cod\.\s*\d{7,8}(?:\s*-\s*\d+)?/gi, "")
+  .replace(/alla voce\s+\d{7,8}/gi, "alla voce di riferimento")
+  .replace(/\(25\d{2}\)\s*COD D ESCRIZIONE U\.M\. PREZZO \(EURO\)\s*/g, "");
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const store = (k, v) => {
   try { localStorage.setItem(k, JSON.stringify(v)); return true; }
@@ -282,6 +286,7 @@ function nuovo() {
   };
 }
 let prev = load("preventivo") || nuovo();
+prev.righe.forEach((r) => { r.descrizione = pulisciDescrizione(r.descrizione); });
 prev.azienda = load("azienda") || prev.azienda || {};
 const salva = () => { store("preventivo", prev); store("azienda", prev.azienda); };
 
@@ -321,7 +326,7 @@ document.addEventListener("input", (e) => {
 });
 
 // ---------- Ricerca prezzario ----------
-const DB = (window.PREZZARIO || []).map((v, i) => ({ ...v, _i: i, _s: norm(v.codice + " " + v.descrizione + " " + v.capitolo) }));
+const DB = (window.PREZZARIO || []).map((v, i) => ({ ...v, _i: i, _s: norm(v.descrizione + " " + v.capitolo) }));
 [...new Set(DB.map((v) => v.capitolo))].filter(Boolean).sort().forEach((c) => {
   $("#cap").add(new Option(c, c)); $("#listinoCap").add(new Option(c, c));
 });
@@ -339,12 +344,12 @@ function fotoSicura(value) {
 function scheda(v) {
   const src = fotoSicura(foto[v.codice] || v.foto || "");
   return `<article class="ris">
-    <div>${src ? `<img class="foto" src="${esc(src)}" alt="Foto della voce ${esc(v.codice)}" loading="lazy" referrerpolicy="no-referrer">` : ""}
+    <div>${src ? `<img class="foto" src="${esc(src)}" alt="Foto illustrativa: ${esc(v.capitolo || "servizio di giardinaggio")}" loading="lazy" referrerpolicy="no-referrer">` : ""}
       <div class="foto foto-vuota" ${src ? "hidden" : ""}>Foto non disponibile</div></div>
-    <div class="d"><b>${esc(v.codice)}</b><div>${esc(v.descrizione)}</div><small>${esc(v.capitolo)} · pag. ${esc(v.pagina)}</small>
+    <div class="d"><div>${esc(v.descrizione)}</div><small>${esc(v.capitolo)}</small>
       <div class="prodotto-info"><span>U.M.: ${esc(v.um)}</span><strong>€ ${eur(v.prezzo)}</strong></div></div>
-    <div class="prodotto-azioni"><button class="prim" data-add="${v._i}" aria-label="Aggiungi la voce ${esc(v.codice)}">+ Aggiungi</button>
-      <button data-foto="${v._i}" aria-label="Configura foto della voce ${esc(v.codice)}">Foto…</button></div>
+    <div class="prodotto-azioni"><button class="prim" data-add="${v._i}" aria-label="Aggiungi: ${esc(v.descrizione)}">+ Aggiungi</button>
+      <button data-foto="${v._i}" aria-label="Configura foto: ${esc(v.descrizione)}">Foto…</button></div>
   </article>`;
 }
 function cerca(s = ricerche[0]) {
@@ -372,11 +377,11 @@ ricerche.forEach((s) => {
     if (e.target.dataset.add != null) {
       const v = DB[e.target.dataset.add];
       aggiungi({ codice: v.codice, descrizione: v.descrizione, um: v.um, prezzo: v.prezzo, qta: 1 });
-      $("#stato").textContent = `Voce ${v.codice} aggiunta al preventivo.`;
+      $("#stato").textContent = "Voce aggiunta al preventivo.";
     }
     if (e.target.dataset.foto != null) {
       prodottoFoto = DB[e.target.dataset.foto];
-      $("#fotoProdotto").textContent = `${prodottoFoto.codice} — ${prodottoFoto.descrizione}`;
+      $("#fotoProdotto").textContent = prodottoFoto.descrizione;
       const value = foto[prodottoFoto.codice] || prodottoFoto.foto || "";
       $("#fotoUrl").value = value.startsWith("data:") ? "" : value;
       $("#fotoFile").value = "";
@@ -421,11 +426,10 @@ $("#bTitolo").onclick = () => aggiungi({ tipo: "titolo", descrizione: "Nuova sez
 function renderRighe() {
   $("#righe").innerHTML = prev.righe.map((r, i) => r.tipo === "titolo" ? `
     <tr class="titolo" data-id="${esc(r.id)}">
-      <td></td><td colspan="6"><textarea data-f="descrizione" rows="1">${esc(r.descrizione)}</textarea></td>
+      <td colspan="6"><textarea data-f="descrizione" rows="1">${esc(r.descrizione)}</textarea></td>
       <td class="act">${azioni(i)}</td>
     </tr>` : `
     <tr data-id="${esc(r.id)}" class="${[r.parti, r.lun, r.lar, r.alt].some((x) => x !== "" && x != null) ? "show-mis" : ""}">
-      <td class="w-m"><input data-f="codice" value="${esc(r.codice)}"></td>
       <td><textarea data-f="descrizione" rows="2">${esc(r.descrizione)}</textarea>
         <div class="misure">
           <input type="number" step="any" data-f="parti" placeholder="parti ug." value="${esc(r.parti)}">
@@ -439,11 +443,11 @@ function renderRighe() {
       <td class="w-s"><input class="n" type="number" step="any" data-f="variazione" value="${esc(r.variazione)}" title="Es. +80 per 1 solo albero, -10 per sconto riga"></td>
       <td class="n imp">${eur(importoRiga(r))}</td>
       <td class="act"><button data-a="mis" title="Misure">📐</button>${azioni(i)}</td>
-    </tr>`).join("") || `<tr><td colspan="8" class="muted" style="padding:16px">Nessuna voce: cerca nel prezzario e premi “+”, oppure aggiungi una voce libera.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="7" class="muted" style="padding:16px">Nessuna voce: cerca nel prezzario e premi “+”, oppure aggiungi una voce libera.</td></tr>`;
   renderTotali();
-  const labels = ["Codice", "Descrizione", "U.M.", "Quantità", "Prezzo €", "Variazione %", "Importo €", "Azioni"];
+  const labels = ["Descrizione", "U.M.", "Quantità", "Prezzo €", "Variazione %", "Importo €", "Azioni"];
   $("#righe").querySelectorAll("tr:not(.titolo)").forEach((tr) => {
-    if (tr.cells.length !== 8) return;
+    if (tr.cells.length !== 7) return;
     [...tr.cells].forEach((td, i) => {
       td.dataset.label = labels[i];
       td.querySelectorAll("input, textarea").forEach((el) => el.setAttribute("aria-label", el.placeholder || labels[i]));
@@ -593,7 +597,7 @@ $("#fApri").onchange = async (e) => {
       cliente: { ...base.cliente, ...p.cliente },
       dati: { ...base.dati, ...p.dati },
       condizioni: { ...base.condizioni, ...p.condizioni },
-      righe: p.righe.map((r) => ({ ...r, id: uid() })),
+      righe: p.righe.map((r) => ({ ...r, descrizione: pulisciDescrizione(r.descrizione), id: uid() })),
     };
     salva(); bindCampi(); renderRighe(); pagina("preventivo");
   } catch { alert("File non valido."); }
