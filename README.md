@@ -12,6 +12,9 @@ Non sono richieste dipendenze o compilazione.
   fotografie: con **Foto…** si può caricare una foto JPEG, PNG o WebP fino a
   1 MB, oppure associare un URL HTTPS. In assenza di foto, o se l’immagine
   non è raggiungibile, viene mostrato un segnaposto esplicito.
+- I codici delle voci sono conservati solo per la gestione interna: non compaiono
+  nelle schede, nel computo o nei documenti Word e stampa/PDF. I riferimenti alle
+  pagine del prezziario sono rimossi dai dati.
 - Azienda, bozza e foto vengono salvate nel `localStorage` del browser:
   non sono sincronizzate fra dispositivi e si perdono cancellando i dati del
   sito. Se lo storage non è disponibile o è pieno, viene mostrato un avviso.
