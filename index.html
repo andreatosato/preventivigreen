@@ -63,7 +63,8 @@
   .ris .d { overflow-wrap:anywhere; white-space:pre-line; line-height:1.6; }
   .foto { width:88px; height:88px; object-fit:cover; border-radius:8px; }
   .foto-vuota { display:grid; place-content:center; text-align:center; background:var(--acc2); color:var(--muted); font-size:12px; }
-  .foto-crediti { display:block; width:88px; margin-top:4px; font-size:10px; line-height:1.3; overflow-wrap:anywhere; }
+  footer { padding:0 16px 16px; }
+  footer details { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
   .prodotto-info { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:8px; }
   .prodotto-azioni { display:grid; gap:8px; }
   #listinoRisultati { border:1px solid var(--line); border-radius:6px; }
@@ -103,7 +104,7 @@
     .tot .big { font-size:16px; }
   }
   @media print {
-    header, main, dialog, #stato, #avvisoStorage { display:none !important; }
+    header, main, footer, dialog, #stato, #avvisoStorage { display:none !important; }
     body { background:#fff; }
     #stampa { display:block; font-size:11pt; color:#000; }
     #stampa table { page-break-inside:auto; } #stampa tr { page-break-inside:avoid; }
@@ -210,6 +211,14 @@
   </section>
 </main>
 
+<footer>
+  <details>
+    <summary>Crediti immagini</summary>
+    <p>Le immagini sono state ridimensionate e ritagliate per adattarsi alle schede.</p>
+    <ul id="creditiFoto"></ul>
+  </details>
+</footer>
+
 <dialog id="exportDialog" aria-labelledby="exportTitolo">
   <form id="exportForm">
     <h2 id="exportTitolo">Dati per l’esportazione</h2>
@@ -249,7 +258,7 @@
   <form id="fotoForm">
     <h2 id="fotoTitolo">Foto prodotto</h2>
     <p id="fotoProdotto"></p>
-    <p class="muted">Le immagini predefinite sono illustrative e possono rappresentare una categoria anziché il prodotto esatto. Puoi sostituirle con una foto di cui possiedi i diritti, caricandola dal dispositivo (JPEG, PNG o WebP, massimo 1 MB) oppure tramite un URL HTTPS. Le foto personalizzate restano in questo browser, separate dai file preventivo. Gli URL esterni caricano l’immagine dal sito indicato.</p>
+    <p class="muted">Puoi sostituire la foto con una di cui possiedi i diritti, caricandola dal dispositivo (JPEG, PNG o WebP, massimo 1 MB) oppure tramite un URL HTTPS. Le foto personalizzate restano in questo browser, separate dai file preventivo. Gli URL esterni caricano l’immagine dal sito indicato.</p>
     <label>Carica foto <input id="fotoFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
     <label>URL della foto <input id="fotoUrl" type="url" placeholder="https://…" aria-describedby="fotoErrore"></label>
     <p id="fotoErrore" role="alert"></p>
@@ -379,6 +388,9 @@ const urlLicenzeFoto = {
   "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/",
   "CC0": "https://creativecommons.org/publicdomain/zero/1.0/",
 };
+$("#creditiFoto").innerHTML = Object.values(fotoIllustrative).map((immagine) =>
+  `<li>${esc(immagine.file)}: ${esc(immagine.autore)} · ${urlLicenzeFoto[immagine.licenza] ? `<a href="${esc(urlLicenzeFoto[immagine.licenza])}">${esc(immagine.licenza)}</a>` : esc(immagine.licenza)} · ${esc(immagine.fonte)}</li>`
+).join("");
 function fotoPredefinita(v) {
   if (v.codice === "15060001") return fotoIllustrative.abelia;
   if (v.codice === "15080001") return fotoIllustrative.alba;
@@ -402,8 +414,7 @@ function scheda(v) {
   const src = personalizzata || `images/${illustrazione.file}`;
   return `<article class="ris">
     <div>${src ? `<img class="foto" src="${esc(src)}" alt="Foto illustrativa: ${esc(v.capitolo || "servizio di giardinaggio")}" loading="lazy" referrerpolicy="no-referrer">` : ""}
-      <div class="foto foto-vuota" ${src ? "hidden" : ""}>Foto non disponibile</div>
-      ${personalizzata ? "" : `<small class="foto-crediti">Immagine illustrativa<br><a href="${esc(illustrazione.fonte)}">${esc(illustrazione.autore)}</a> · ${urlLicenzeFoto[illustrazione.licenza] ? `<a href="${esc(urlLicenzeFoto[illustrazione.licenza])}">${esc(illustrazione.licenza)}</a>` : esc(illustrazione.licenza)} (ridimensionata e ritagliata)</small>`}</div>
+      <div class="foto foto-vuota" ${src ? "hidden" : ""}>Foto non disponibile</div></div>
       <div class="d"><div>${esc(v.descrizione)}</div><small>${esc(v.capitolo)}</small>
       <div class="prodotto-info"><span>U.M.: ${esc(v.um)}</span><strong>€ ${eur(v.prezzo)}</strong></div></div>
     <div class="prodotto-azioni"><button class="prim" data-add="${v._i}" aria-label="Aggiungi: ${esc(v.descrizione)}">+ Aggiungi</button>

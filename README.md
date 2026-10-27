@@ -10,8 +10,9 @@ Non sono richieste dipendenze o compilazione.
   (con ricerca, filtro per capitolo e paginazione) e impostazioni aziendali.
 - Le schede prodotto mostrano la descrizione integrale e immagini illustrative
   locali: alcune rappresentano la specie, le altre la categoria o il giardinaggio,
-  non necessariamente il prodotto o servizio specifico. Fonti e licenze sono in
-  `images/README.md`. Con **Foto…** si può sostituire l'immagine caricando una
+  non necessariamente il prodotto o servizio specifico. Fonti e licenze sono
+  disponibili nei crediti in fondo alla pagina e in `images/README.md`. Con **Foto…**
+  si può sostituire l'immagine caricando una
   foto JPEG, PNG o WebP fino a 1 MB, oppure associando un URL HTTPS. Se
   l’immagine non è raggiungibile, viene mostrato un segnaposto esplicito.
 - I codici delle voci sono conservati solo per la gestione interna: non compaiono
