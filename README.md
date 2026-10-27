@@ -8,10 +8,12 @@ Non sono richieste dipendenze o compilazione.
   campi e pulsanti accessibili al tocco.
 - Il menu ☰ permette di passare fra preventivo, consultazione del prezziario
   (con ricerca, filtro per capitolo e paginazione) e impostazioni aziendali.
-- Le schede prodotto mostrano la descrizione integrale. Il dataset non contiene
-  fotografie: con **Foto…** si può caricare una foto JPEG, PNG o WebP fino a
-  1 MB, oppure associare un URL HTTPS. In assenza di foto, o se l’immagine
-  non è raggiungibile, viene mostrato un segnaposto esplicito.
+- Le schede prodotto mostrano la descrizione integrale e immagini illustrative
+  locali: alcune rappresentano la specie, le altre la categoria o il giardinaggio,
+  non necessariamente il prodotto o servizio specifico. Fonti e licenze sono in
+  `images/README.md`. Con **Foto…** si può sostituire l'immagine caricando una
+  foto JPEG, PNG o WebP fino a 1 MB, oppure associando un URL HTTPS. Se
+  l’immagine non è raggiungibile, viene mostrato un segnaposto esplicito.
 - I codici delle voci sono conservati solo per la gestione interna: non compaiono
   nelle schede, nel computo o nei documenti Word e stampa/PDF. I riferimenti alle
   pagine del prezziario sono rimossi dai dati.
